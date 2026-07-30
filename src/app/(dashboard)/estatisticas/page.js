@@ -205,13 +205,17 @@ export default function EstatisticasPage() {
       <html lang="pt-BR">
       <head>
         <meta charset="UTF-8">
-        <title>Relatório de Estatísticas - SOBEI</title>
+        <title>Relatório Estatístico Executivo - SOBEI</title>
         <style>
+          @page {
+            size: A4;
+            margin: 15mm;
+          }
           body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #333;
+            color: #2D3748;
             margin: 0;
-            padding: 40px;
+            padding: 20px;
             background-color: #fff;
             line-height: 1.5;
           }
@@ -219,44 +223,46 @@ export default function EstatisticasPage() {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid #2A1F8A;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+            border-bottom: 3px solid #1B1464;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
           }
-          .logo-title h1 {
-            color: #2A1F8A;
-            margin: 0;
-            font-size: 28px;
-            font-weight: bold;
-            font-style: italic;
+          .logo-title img {
+            height: 50px;
+            width: auto;
+            display: block;
+            margin-bottom: 6px;
           }
           .logo-title p {
-            margin: 5px 0 0 0;
-            color: #666;
-            font-size: 14px;
+            margin: 4px 0 0 0;
+            color: #4A5568;
+            font-size: 13px;
+            font-weight: 500;
           }
           .meta-info {
             text-align: right;
             font-size: 12px;
-            color: #666;
+            color: #718096;
           }
           .section-title {
             color: #1B1464;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 8px;
-            margin-top: 30px;
-            margin-bottom: 15px;
-            font-size: 18px;
+            border-bottom: 2px solid #E2E8F0;
+            padding-bottom: 6px;
+            margin-top: 28px;
+            margin-bottom: 16px;
+            font-size: 16px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            font-weight: bold;
+            page-break-after: avoid;
           }
           .filters-summary {
-            background-color: #f8f9fa;
-            border: 1px solid #eaeaea;
+            background-color: #F7FAFC;
+            border: 1px solid #E2E8F0;
             border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 25px;
-            font-size: 14px;
+            padding: 12px 16px;
+            margin-bottom: 24px;
+            font-size: 13px;
           }
           .filters-summary table {
             width: 100%;
@@ -266,98 +272,113 @@ export default function EstatisticasPage() {
             padding: 4px 8px;
           }
           .filters-summary td strong {
-            color: #2A1F8A;
+            color: #1B1464;
           }
           .kpi-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 25px;
+            gap: 12px;
+            margin-bottom: 16px;
+            page-break-inside: avoid;
           }
           .kpi-card {
-            border: 1px solid #e2e8f0;
+            border: 1px solid #E2E8F0;
             border-radius: 8px;
-            padding: 15px;
+            padding: 12px 14px;
             background-color: #fff;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border-left: 4px solid #2A1F8A;
+            border-left: 4px solid #1B1464;
           }
-          .kpi-card.accent { border-left-color: #FF7043; }
+          .kpi-card.accent { border-left-color: #7C6BC4; }
           .kpi-card.green { border-left-color: #43A047; }
+          .kpi-card.orange { border-left-color: #FF7043; }
           .kpi-card__title {
-            font-size: 11px;
+            font-size: 10px;
             color: #718096;
             text-transform: uppercase;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
           }
           .kpi-card__value {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
             color: #1A202C;
           }
           .kpi-card__desc {
             font-size: 11px;
             color: #718096;
-            margin-top: 3px;
+            margin-top: 2px;
           }
           table.data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
+            margin-top: 12px;
+            margin-bottom: 20px;
+            page-break-inside: avoid;
           }
           table.data-table th, table.data-table td {
-            border: 1px solid #e2e8f0;
-            padding: 10px 12px;
+            border: 1px solid #E2E8F0;
+            padding: 8px 12px;
             text-align: left;
           }
           table.data-table th {
-            background-color: #f7fafc;
-            color: #4a5568;
+            background-color: #EDF2F7;
+            color: #2D3748;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 12px;
+            text-transform: uppercase;
           }
           table.data-table td {
-            font-size: 13px;
+            font-size: 12px;
           }
           table.data-table tr:nth-child(even) td {
-            background-color: #fcfcfc;
+            background-color: #F7FAFC;
           }
           .highlight-box {
-            background-color: #ebf8ff;
-            border: 1px solid #bee3f8;
+            background-color: #EBF8FF;
+            border: 1px solid #BEE3F8;
             border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 25px;
+            padding: 14px;
+            margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
+            page-break-inside: avoid;
           }
           .highlight-item {
             flex: 1;
             text-align: center;
           }
           .highlight-item:not(:last-child) {
-            border-right: 1px solid #bee3f8;
+            border-right: 1px solid #BEE3F8;
           }
           .highlight-item__title {
-            font-size: 12px;
-            color: #2b6cb0;
+            font-size: 11px;
+            color: #2B6CB0;
             text-transform: uppercase;
             font-weight: bold;
           }
           .highlight-item__value {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
-            color: #2c5282;
-            margin-top: 5px;
+            color: #2C5282;
+            margin-top: 4px;
+          }
+          .flex-tables {
+            display: flex;
+            gap: 20px;
+            page-break-inside: avoid;
+          }
+          .flex-tables > div {
+            flex: 1;
           }
           .footer {
-            margin-top: 50px;
-            border-top: 1px solid #eee;
-            padding-top: 15px;
+            margin-top: 40px;
+            border-top: 1px solid #E2E8F0;
+            padding-top: 12px;
             text-align: center;
-            font-size: 11px;
-            color: #a0aec0;
+            font-size: 10px;
+            color: #A0AEC0;
+            page-break-inside: avoid;
           }
           @media print {
             body {
@@ -369,21 +390,21 @@ export default function EstatisticasPage() {
           }
           .print-btn-container {
             text-align: right;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
           }
           .btn-print {
-            background-color: #2A1F8A;
+            background-color: #1B1464;
             color: white;
             border: none;
             padding: 10px 20px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
           }
           .btn-print:hover {
-            background-color: #1B1464;
+            background-color: #2A1F8A;
           }
         </style>
       </head>
@@ -394,83 +415,130 @@ export default function EstatisticasPage() {
 
         <div class="header">
           <div class="logo-title">
-            <img src="${logoUrl}" alt="SOBEI Logo" style="height: 55px; width: auto; display: block; margin-bottom: 6px;" />
-            <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">Canal de Denúncias — Relatório Estatístico Oficial</p>
+            <img src="${logoUrl}" alt="SOBEI Logo" />
+            <p>Canal de Denúncias — Relatório Estatístico Executivo de Compliance</p>
           </div>
           <div class="meta-info">
             <p><strong>Emitido em:</strong> ${dataEmissao}</p>
-            <p><strong>Usuário:</strong> Administrador</p>
+            <p><strong>Emissor:</strong> Painel Administrativo SOBEI</p>
           </div>
         </div>
 
         <div class="filters-summary">
           <table>
             <tr>
-              <td><strong>Filtro de Unidade:</strong> ${filtroUnidadeText}</td>
-              <td><strong>Filtro de Tipo:</strong> ${filtroTipoText}</td>
+              <td><strong>Unidade:</strong> ${filtroUnidadeText}</td>
+              <td><strong>Tipo de Manifestação:</strong> ${filtroTipoText}</td>
             </tr>
             <tr>
-              <td colspan="2"><strong>Período Analisado:</strong> ${filtroPeriodoText}</td>
+              <td colspan="2"><strong>Período de Análise:</strong> ${filtroPeriodoText}</td>
             </tr>
           </table>
         </div>
 
-        <div class="section-title">Resumo Estatístico Geral</div>
+        <div class="section-title">Indicadores Globais de Desempenho</div>
         <div class="kpi-container">
           <div class="kpi-card">
             <div class="kpi-card__title">Total de Manifestações</div>
             <div class="kpi-card__value">${totalDenuncias}</div>
-            <div class="kpi-card__desc">Total registrado no período</div>
+            <div class="kpi-card__desc">Registros no período</div>
           </div>
           <div class="kpi-card accent">
             <div class="kpi-card__title">Taxa de Anonimato</div>
             <div class="kpi-card__value">${taxaAnonimato}%</div>
             <div class="kpi-card__desc">${anonimas} anônimas, ${identificadas} identificadas</div>
           </div>
-          <div class="kpi-card green">
-            <div class="kpi-card__title">Casos Resolvidos</div>
-            <div class="kpi-card__value">${resolvidos}</div>
-            <div class="kpi-card__desc">Concluídos com sucesso</div>
+          <div class="kpi-card accent">
+            <div class="kpi-card__title">Tempo Médio de Resolução (SLA)</div>
+            <div class="kpi-card__value">${mediaDiasResolucao ? `${mediaDiasResolucao} dias` : '—'}</div>
+            <div class="kpi-card__desc">Média até fechamento</div>
           </div>
         </div>
 
         <div class="kpi-container">
-          <div class="kpi-card">
-            <div class="kpi-card__title">Casos na Fila (Triagem)</div>
+          <div class="kpi-card orange">
+            <div class="kpi-card__title">Em Triagem (Fila)</div>
             <div class="kpi-card__value">${fila}</div>
             <div class="kpi-card__desc">Aguardando análise inicial</div>
           </div>
-          <div class="kpi-card">
-            <div class="kpi-card__title">Casos em Resolução</div>
+          <div class="kpi-card orange">
+            <div class="kpi-card__title">Em Resolução</div>
             <div class="kpi-card__value">${emAndamento}</div>
-            <div class="kpi-card__desc">Investigação em andamento</div>
+            <div class="kpi-card__desc">Investigação ativa</div>
           </div>
-          <div class="kpi-card">
-            <div class="kpi-card__title">Casos Arquivados</div>
-            <div class="kpi-card__value">${arquivados}</div>
-            <div class="kpi-card__desc">Sem evidências / duplicados</div>
+          <div class="kpi-card green">
+            <div class="kpi-card__title">Resolutividade Operacional</div>
+            <div class="kpi-card__value">${taxaResolutividade}%</div>
+            <div class="kpi-card__desc">${resolvidos} resolvidos vs ${arquivados} arquivados</div>
           </div>
         </div>
 
-        <div class="section-title">Análise de Destaques por Unidade</div>
+        <div class="section-title">Destaques por Unidade</div>
         <div class="highlight-box">
           <div class="highlight-item">
-            <div class="highlight-item__title">Unidade com Mais Denúncias</div>
+            <div class="highlight-item__title">Unidade com Maior Incidência</div>
             <div class="highlight-item__value">${maxUnidade ? `${maxUnidade.unidade} (${maxUnidade.total})` : 'Nenhuma'}</div>
           </div>
           <div class="highlight-item">
-            <div class="highlight-item__title">Unidade com Menos Denúncias</div>
+            <div class="highlight-item__title">Unidade com Menor Incidência</div>
             <div class="highlight-item__value">${minUnidade ? `${minUnidade.unidade} (${minUnidade.total})` : 'Nenhuma'}</div>
           </div>
         </div>
 
-        <div class="section-title">Comparativo Entre Todas as Unidades</div>
+        <div class="flex-tables">
+          <div>
+            <div class="section-title" style="margin-top:0;">Tipo de Manifestação</div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Quantidade</th>
+                  <th>Proporção</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Anônima</td>
+                  <td>${anonimas}</td>
+                  <td>${totalDenuncias > 0 ? ((anonimas / totalDenuncias) * 100).toFixed(1) : '0.0'}%</td>
+                </tr>
+                <tr>
+                  <td>Identificada</td>
+                  <td>${identificadas}</td>
+                  <td>${totalDenuncias > 0 ? ((identificadas / totalDenuncias) * 100).toFixed(1) : '0.0'}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <div class="section-title" style="margin-top:0;">Gravidade / Prioridades</div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Prioridade</th>
+                  <th>Quantidade</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${prioridadesData.map(p => `
+                  <tr>
+                    <td>${p.name}</td>
+                    <td>${p.value}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="section-title">Detalhamento Completo por Unidade</div>
         <table class="data-table">
           <thead>
             <tr>
-              <th>Rank</th>
-              <th>Unidade</th>
-              <th>Total de Denúncias</th>
+              <th>Posição</th>
+              <th>Unidade Escolar / Setor</th>
+              <th>Total de Manifestações</th>
               <th>Participação (%)</th>
             </tr>
           </thead>
@@ -491,12 +559,12 @@ export default function EstatisticasPage() {
         </table>
 
         ${evolucaoData.length > 0 ? `
-          <div class="section-title">Evolução Mensal / Período</div>
-          <table class="data-table" style="max-width: 500px;">
+          <div class="section-title">Histórico de Evolução Temporal</div>
+          <table class="data-table" style="max-width: 450px;">
             <thead>
               <tr>
                 <th>Período</th>
-                <th>Total de Denúncias</th>
+                <th>Manifestações Registradas</th>
               </tr>
             </thead>
             <tbody>
@@ -511,7 +579,7 @@ export default function EstatisticasPage() {
         ` : ''}
 
         <div class="footer">
-          <p>© SOBEI — Relatório Confidencial gerado eletronicamente para fins de auditoria interna.</p>
+          <p>© SOBEI — Relatório Oficial de Compliance e Ouvidoria gerado automaticamente para fins de gestão interna.</p>
         </div>
       </body>
       </html>
@@ -594,6 +662,32 @@ export default function EstatisticasPage() {
   );
 
   const evolucaoData = buildEvolucaoReal(todasDenuncias || [], filtros.dataFim);
+
+  const fechadasCount = statusData.find(s => s.name === 'Protocolo Fechado')?.value || 0;
+  const arquivadasCount = statusData.find(s => s.name === 'Arquivada')?.value || 0;
+  const totalEncerradas = fechadasCount + arquivadasCount;
+  const taxaResolutividade = totalEncerradas > 0 ? ((fechadasCount / totalEncerradas) * 100).toFixed(1) : '100.0';
+
+  const mediaDiasResolucao = (() => {
+    if (!todasDenuncias || todasDenuncias.length === 0) return null;
+    const fechadas = todasDenuncias.filter(d => (d.status === 'fechada' || d.status === 'FECHADA'));
+    if (fechadas.length === 0) return null;
+
+    let totalDias = 0;
+    let count = 0;
+    fechadas.forEach(d => {
+      const dInicio = parseDate(d.dataEnvio || d.dataAbertura);
+      const dFim = parseDate(d.dataFechamento || d.ultimaAlteracao);
+      if (dInicio && dFim && dFim >= dInicio) {
+        const diffMs = Math.abs(dFim - dInicio);
+        const diffDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+        totalDias += diffDays;
+        count++;
+      }
+    });
+
+    return count > 0 ? (totalDias / count).toFixed(1) : null;
+  })();
 
   return (
     <div className="statistics-container">
@@ -716,19 +810,19 @@ export default function EstatisticasPage() {
             <span className="kpi-card__desc">Manifestações no período</span>
           </div>
 
-          {/* Card 3: Na Fila */}
-          <div className="kpi-card kpi-card--orange">
+          {/* Card 3: Tempo Médio de Resolução (SLA) */}
+          <div className="kpi-card kpi-card--accent">
             <div className="kpi-card__header">
-              <span className="kpi-card__title" style={{ textTransform: 'uppercase' }}>Casos na Fila</span>
+              <span className="kpi-card__title" style={{ textTransform: 'uppercase' }}>Tempo Médio (SLA)</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="kpi-card__icon"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
             </div>
             <span className="kpi-card__value">
-              {statusData.find(s => s.name === 'Aguardando Análise')?.value || 0}
+              {mediaDiasResolucao ? `${mediaDiasResolucao} dias` : '—'}
             </span>
-            <span className="kpi-card__desc">Aguardando triagem</span>
+            <span className="kpi-card__desc">Tempo médio até conclusão</span>
           </div>
 
-          {/* Card 4: Em Resolução */}
+          {/* Card 4: Casos em Resolução */}
           <div className="kpi-card kpi-card--orange">
             <div className="kpi-card__header">
               <span className="kpi-card__title" style={{ textTransform: 'uppercase' }}>Casos em Resolução</span>
@@ -740,7 +834,7 @@ export default function EstatisticasPage() {
             <span className="kpi-card__desc">Sendo apurados</span>
           </div>
 
-          {/* Card 5: Resolvidos */}
+          {/* Card 5: Casos Resolvidos */}
           <div className="kpi-card kpi-card--green">
             <div className="kpi-card__header">
               <span className="kpi-card__title" style={{ textTransform: 'uppercase' }}>Casos Resolvidos</span>
@@ -752,16 +846,14 @@ export default function EstatisticasPage() {
             <span className="kpi-card__desc">Protocolos finalizados</span>
           </div>
 
-          {/* Card 6: Arquivados */}
-          <div className="kpi-card kpi-card--gray" style={{ '--color-primary': 'var(--color-gray-600)' }}>
+          {/* Card 6: Taxa de Resolutividade */}
+          <div className="kpi-card kpi-card--green">
             <div className="kpi-card__header">
-              <span className="kpi-card__title" style={{ textTransform: 'uppercase' }}>Casos Arquivados</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="kpi-card__icon"><path d="M21 8v13H3V8"></path><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>
+              <span className="kpi-card__title" style={{ textTransform: 'uppercase' }}>Resolutividade</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="kpi-card__icon"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             </div>
-            <span className="kpi-card__value">
-              {statusData.find(s => s.name === 'Arquivada')?.value || 0}
-            </span>
-            <span className="kpi-card__desc">Sem evidências / duplicados</span>
+            <span className="kpi-card__value">{taxaResolutividade}%</span>
+            <span className="kpi-card__desc">Casos encerrados com solução</span>
           </div>
         </div>
       )}
@@ -823,23 +915,25 @@ export default function EstatisticasPage() {
             </div>
           </div>
 
-          {/* Coluna 2: Pie Chart de Unidades */}
+          {/* Coluna 2: Donut Chart de Tipos de Manifestação */}
           <div className="statistics-page__chart-container" style={{ margin: 0 }}>
-            <h2 className="statistics-page__chart-title" style={{ padding: '0 var(--spacing-md)' }}>Distribuição por Unidade:</h2>
-            <div className="statistics-chart__wrapper" style={{ padding: '10px 0', minHeight: '300px' }}>
-              {pieData.length > 0 ? (
+            <h2 className="statistics-page__chart-title" style={{ padding: '0 var(--spacing-md)' }}>Distribuição por Tipo de Manifestação:</h2>
+            <div className="statistics-chart__wrapper" style={{ padding: '10px 0', minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {tiposData.length > 0 && tiposData.some(t => t.value > 0) ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={pieData}
-                      dataKey="percentual"
-                      nameKey="unidade"
+                      data={tiposData}
+                      dataKey="value"
+                      nameKey="name"
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
-                      label={renderCustomLabel}
+                      innerRadius={65}
+                      outerRadius={85}
+                      paddingAngle={4}
+                      label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
                     >
-                      {pieData.map((entry, index) => (
+                      {tiposData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.cor} />
                       ))}
                     </Pie>
@@ -850,16 +944,22 @@ export default function EstatisticasPage() {
                         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                       }}
                     />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={36} 
+                      iconType="circle"
+                      formatter={(value) => <span style={{ fontSize: '12px', color: '#666', fontWeight: 'bold' }}>{value}</span>}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <p style={{ color: 'var(--color-gray-500)', textAlign: 'center', padding: '40px 0' }}>Sem dados para exibir</p>
+                <p style={{ color: 'var(--color-gray-500)', textAlign: 'center', padding: '40px 0' }}>Sem dados de tipo no período</p>
               )}
             </div>
             <div className="chart-explanation-card" style={{ margin: '16px' }}>
               <p className="chart-explanation-card__text">
-                <strong>O que este gráfico mostra:</strong> A proporção percentual de denúncias distribuídas entre as unidades. 
-                Visualizar os dados em percentual ajuda a entender rapidamente quais locais representam a maior fatia das ocorrências reportadas no período.
+                <strong>O que este gráfico mostra:</strong> A proporção de denúncias <strong>Anônimas</strong> vs <strong>Identificadas</strong>.
+                Ajuda a monitorar a confiança da comunidade no anonimato do canal da SOBEI.
               </p>
             </div>
           </div>
