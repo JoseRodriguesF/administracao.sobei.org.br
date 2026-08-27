@@ -19,52 +19,52 @@
 }
 
 /* ---- Dashboard Home ---- */
-.dashboard-home__title {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-black);
-  color: var(--color-gray-900);
-  margin-bottom: var(--spacing-xl);
-  font-style: italic;
-  text-align: center;
+.dashboard-home {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 2 * var(--spacing-xl));
+  width: 100%;
 }
 
 .dashboard-home__content {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.dashboard-home__text {
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-relaxed);
-  color: var(--color-gray-700);
-  margin-bottom: var(--spacing-lg);
-  text-align: justify;
-}
-
-.dashboard-home__subtitle {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-gray-900);
-  margin-bottom: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xl);
+  max-width: 580px;
+  width: 100%;
   text-align: center;
+  animation: fadeIn 0.4s ease-in-out;
 }
 
-.dashboard-home__list {
-  padding-left: var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
+.dashboard-home__logo-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 420px;
 }
 
-.dashboard-home__list li {
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-relaxed);
-  color: var(--color-gray-700);
-  margin-bottom: var(--spacing-sm);
-  list-style-type: disc;
+.dashboard-home__logo {
+  width: 100%;
+  max-width: 380px;
+  height: auto;
+  object-fit: contain;
 }
 
-.dashboard-home__list li strong {
+.dashboard-home__title {
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  font-weight: var(--font-weight-black);
   color: var(--color-gray-900);
+  font-style: italic;
+  letter-spacing: -0.01em;
+  margin: 0;
 }
+
+
+
 
 /* ---- Filter Bar ---- */
 .filter-bar {
@@ -110,21 +110,19 @@
 }
 
 @media (max-width: 768px) {
-  .dashboard-home__title {
-    font-size: var(--font-size-xl);
-  }
-
   .dashboard-home__content {
-    max-width: 100%;
+    gap: var(--spacing-lg);
   }
 
-  .dashboard-home__text {
-    font-size: var(--font-size-sm);
+  .dashboard-home__logo {
+    max-width: 260px;
   }
 
-  .dashboard-home__subtitle {
-    font-size: var(--font-size-base);
+  .dashboard-home__title {
+    font-size: 1.15rem;
   }
+
+
 
   .admin-page__title {
     font-size: var(--font-size-xl);
