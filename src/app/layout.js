@@ -3,6 +3,7 @@ import { Inter, Montserrat } from 'next/font/google';
 import QueryProvider from '@/components/QueryProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -32,6 +33,7 @@ export default function RootLayout({ children }) {
           <AuthProvider>{children}</AuthProvider>
         </QueryProvider>
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
