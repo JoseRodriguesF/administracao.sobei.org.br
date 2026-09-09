@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -18,6 +18,7 @@ import {
 } from 'recharts';
 import { fetchEstatisticasCongresso } from '@/lib/api';
 import { IconSearch } from '@/components/Icons';
+import CustomSelect from '@/components/admin/CustomSelect';
 
 const CORES_DONUT_OSC = ['#0C1B33', '#F97316'];
 const CORES_DONUT_OFICINA = ['#10B981', '#F59E0B'];
@@ -27,6 +28,31 @@ const CORES_BARRAS_UNIDADES = [
   '#14B8A6', '#2DD4BF', '#059669', '#10B981',
 ];
 
+function unificarOscs(lista) {
+  if (!lista || lista.length === 0) return [];
+  const map = new Map();
+  for (const item of lista) {
+    const raw = (item.nomeOsc || 'Outras Instituições').trim();
+    const semAcento = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const partes = semAcento.split(/\s+[-/|:]\s+/);
+    const chave = (partes[0] || semAcento).replace(/[^a-z0-9]/g, '') || 'outras';
+
+    if (!map.has(chave)) {
+      map.set(chave, { nomeOsc: raw, totalInscritos: 0, percentualOutras: 0 });
+    }
+    const grp = map.get(chave);
+    grp.totalInscritos += (item.totalInscritos || 0);
+    grp.percentualOutras += (item.percentualOutras || 0);
+
+    if (raw.length < grp.nomeOsc.length && !raw.includes(' - ')) {
+      grp.nomeOsc = raw;
+    } else if (raw.match(/\b[A-Z]{2,}\b/) && !grp.nomeOsc.match(/\b[A-Z]{2,}\b/)) {
+      grp.nomeOsc = raw;
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => b.totalInscritos - a.totalInscritos);
+}
+
 export default function CongressoEstatisticas() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -35,64 +61,41 @@ export default function CongressoEstatisticas() {
 
   const carregarDados = useCallback(async () => {
     setLoading(true);
-    const data = await fetchEstatisticasCongresso();
-    setStats(data);
-    setLoading(false);
+    try {
+      const data = await fetchEstatisticasCongresso();
+      setStats(data);
+    } catch (err) {
+      console.error('Erro ao carregar estatísticas do congresso:', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    carregarDados();
-  }, [carregarDados]);
+    let ativo = true;
+    fetchEstatisticasCongresso()
+      .then((data) => {
+        if (ativo) {
+          setStats(data);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error('Erro ao carregar estatísticas:', err);
+        if (ativo) setLoading(false);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '360px', gap: '12px' }}>
-        <div className="loading-spinner" style={{ width: '36px', height: '36px', borderWidth: '3px' }} />
-        <span style={{ fontSize: '0.90rem', color: '#64748B', fontWeight: '600' }}>Carregando estatísticas consolidadas do Congresso...</span>
-      </div>
-    );
-  }
+  const outrasOscsUnificadas = useMemo(() => {
+    return stats?.porOutraOsc ? unificarOscs(stats.porOutraOsc) : [];
+  }, [stats]);
 
-  if (!stats) {
-    return (
-      <div style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-        <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>Não foi possível carregar as estatísticas</div>
-        <p style={{ color: '#64748B', fontSize: '0.90rem', marginBottom: '16px' }}>Verifique se o perfil de acesso possui permissão Suporte e tente novamente.</p>
-        <button type="button" className="btn btn--secondary" onClick={carregarDados}>Tentar Novamente</button>
-      </div>
-    );
-  }
-
-  // 1. Dados para Gráficos Donut
-  const donutOscData = [
-    { name: 'SOBEI (Internos)', value: stats.totalSobei, color: CORES_DONUT_OSC[0] },
-    { name: 'Outras OSCs (Parceiros)', value: stats.totalOutrasOsc, color: CORES_DONUT_OSC[1] },
-  ];
-
-  const donutOficinasData = [
-    { name: 'Com Oficina Escolhida', value: stats.totalComOficina, color: CORES_DONUT_OFICINA[0] },
-    { name: 'Sem Oficina (Pendente)', value: stats.totalSemOficina, color: CORES_DONUT_OFICINA[1] },
-  ];
-
-  // 2. Filtro de Oficinas
-  const oficinasFiltradas = (stats.porOficina || []).filter((of) => {
-    const termo = buscaOficina.trim().toLowerCase();
-    const matchBusca = !termo ||
-      of.tema.toLowerCase().includes(termo) ||
-      of.ministrante.toLowerCase().includes(termo) ||
-      of.categoria.toLowerCase().includes(termo);
-
-    if (!matchBusca) return false;
-
-    if (filtroStatusOficina === 'esgotadas') return of.status === 'ESGOTADA';
-    if (filtroStatusOficina === 'quase_cheias') return of.status === 'QUASE_CHEIA';
-    if (filtroStatusOficina === 'disponiveis') return of.status === 'DISPONIVEL';
-
-    return true;
-  });
-
-  // 3. Exportação do Relatório Oficial do Congresso (Impressão / PDF)
-  function handleExportarRelatorioCongresso() {
+  // Exportação do Relatório Oficial do Congresso (Impressão / PDF)
+  const handleExportarRelatorioCongresso = useCallback(() => {
+    if (!stats) return;
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       alert('Por favor, autorize pop-ups para exportar o relatório do Congresso.');
@@ -311,7 +314,7 @@ export default function CongressoEstatisticas() {
           </tbody>
         </table>
 
-        ${(stats.porOutraOsc && stats.porOutraOsc.length > 0) ? `
+        ${(outrasOscsUnificadas && outrasOscsUnificadas.length > 0) ? `
           <div class="section-title">3. Participantes de Outras Instituições (Parceiras / Externas)</div>
           <table>
             <thead>
@@ -323,12 +326,12 @@ export default function CongressoEstatisticas() {
               </tr>
             </thead>
             <tbody>
-              ${stats.porOutraOsc.map((osc, idx) => `
+              ${outrasOscsUnificadas.map((osc, idx) => `
                 <tr>
                   <td style="text-align: center;">${idx + 1}</td>
                   <td><strong>${osc.nomeOsc}</strong></td>
                   <td style="text-align: center; font-weight: 700;">${osc.totalInscritos}</td>
-                  <td style="text-align: center;">${osc.percentualOutras}%</td>
+                  <td style="text-align: center;">${(osc.percentualOutras || 0).toFixed(1)}%</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -348,35 +351,69 @@ export default function CongressoEstatisticas() {
     setTimeout(() => {
       printWindow.print();
     }, 400);
+  }, [stats, outrasOscsUnificadas]);
+
+  useEffect(() => {
+    const onRecarregar = () => carregarDados();
+    const onExportar = () => handleExportarRelatorioCongresso();
+    window.addEventListener('recarregar-congresso-stats', onRecarregar);
+    window.addEventListener('exportar-relatorio-congresso', onExportar);
+    return () => {
+      window.removeEventListener('recarregar-congresso-stats', onRecarregar);
+      window.removeEventListener('exportar-relatorio-congresso', onExportar);
+    };
+  }, [carregarDados, handleExportarRelatorioCongresso]);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '360px', gap: '12px' }}>
+        <div className="loading-spinner" style={{ width: '36px', height: '36px', borderWidth: '3px' }} />
+        <span style={{ fontSize: '0.90rem', color: '#64748B', fontWeight: '600' }}>Carregando estatísticas consolidadas do Congresso...</span>
+      </div>
+    );
   }
+
+  if (!stats) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+        <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>Não foi possível carregar as estatísticas</div>
+        <p style={{ color: '#64748B', fontSize: '0.90rem', marginBottom: '16px' }}>Verifique se o perfil de acesso possui permissão Suporte e tente novamente.</p>
+        <button type="button" className="btn btn--secondary" onClick={carregarDados}>Tentar Novamente</button>
+      </div>
+    );
+  }
+
+  // 1. Dados para Gráficos Donut
+  const donutOscData = [
+    { name: 'SOBEI (Internos)', value: stats.totalSobei, color: CORES_DONUT_OSC[0] },
+    { name: 'Outras OSCs (Parceiros)', value: stats.totalOutrasOsc, color: CORES_DONUT_OSC[1] },
+  ];
+
+  const donutOficinasData = [
+    { name: 'Com Oficina Escolhida', value: stats.totalComOficina, color: CORES_DONUT_OFICINA[0] },
+    { name: 'Sem Oficina (Pendente)', value: stats.totalSemOficina, color: CORES_DONUT_OFICINA[1] },
+  ];
+
+  // 2. Filtro de Oficinas
+  const oficinasFiltradas = (stats.porOficina || []).filter((of) => {
+    const termo = buscaOficina.trim().toLowerCase();
+    const matchBusca = !termo ||
+      of.tema.toLowerCase().includes(termo) ||
+      of.ministrante.toLowerCase().includes(termo) ||
+      of.categoria.toLowerCase().includes(termo);
+
+    if (!matchBusca) return false;
+
+    if (filtroStatusOficina === 'esgotadas') return of.status === 'ESGOTADA';
+    if (filtroStatusOficina === 'quase_cheias') return of.status === 'QUASE_CHEIA';
+    if (filtroStatusOficina === 'disponiveis') return of.status === 'DISPONIVEL';
+
+    return true;
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg, 20px)' }}>
-      {/* 1. Header do Congresso no mesmo padrão oficial de Estatísticas */}
-      <div className="statistics-header">
-        <h1 className="statistics-page__title">Estatísticas do Congresso</h1>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <button
-            className="btn btn--limpar"
-            type="button"
-            onClick={carregarDados}
-            style={{ minHeight: '38px', height: '38px', padding: '0 18px', borderRadius: 'var(--radius-full)', fontSize: '13px' }}
-          >
-            Atualizar
-          </button>
-          <button 
-            className="btn btn--secondary" 
-            type="button" 
-            id="btn-gerar-relatorio-congresso"
-            onClick={handleExportarRelatorioCongresso}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            Exportar relatório
-          </button>
-        </div>
-      </div>
-
-      {/* 2. KPI Metrics em Card Único Horizontal */}
+      {/* 1. KPI Metrics em Card Único Horizontal */}
       <div style={{
         backgroundColor: 'var(--color-white)',
         padding: '10px 18px',
@@ -458,108 +495,185 @@ export default function CongressoEstatisticas() {
         gap: 'var(--spacing-lg, 20px)',
       }}>
         {/* Gráfico A: Proporção SOBEI vs Outras OSCs */}
-        <div className="statistics-page__chart-container" style={{ margin: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-md, 16px)' }}>
-            <h3 className="statistics-page__chart-title" style={{ margin: 0 }}>
-              SOBEI vs Outras OSCs
-            </h3>
-            <span style={{ fontSize: '0.74rem', color: 'var(--color-gray-500)', fontWeight: '600' }}>Participação Relativa</span>
-          </div>
+        <div className="statistics-page__chart-container" style={{ margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-md, 16px)' }}>
+              <h3 className="statistics-page__chart-title" style={{ margin: 0 }}>
+                SOBEI vs Outras OSCs
+              </h3>
+              <span style={{ fontSize: '0.74rem', color: 'var(--color-gray-500)', fontWeight: '600' }}>Participação por Origem</span>
+            </div>
 
-          <div style={{ height: '220px', width: '100%' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={donutOscData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={85}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {donutOscData.map((entry, index) => (
-                    <Cell key={`cell-osc-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(val, name) => [
-                    `${val} participantes (${stats.totalInscritos > 0 ? ((val / stats.totalInscritos) * 100).toFixed(1) : 0}%)`,
-                    name,
-                  ]}
-                />
-                <Legend iconType="circle" />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+            <div style={{ position: 'relative', height: '210px', width: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={donutOscData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={88}
+                    paddingAngle={0}
+                    stroke="#FFFFFF"
+                    strokeWidth={1.5}
+                    dataKey="value"
+                  >
+                    {donutOscData.map((entry, index) => (
+                      <Cell key={`cell-osc-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(val, name) => [
+                      `${val} participantes (${stats.totalInscritos > 0 ? ((val / stats.totalInscritos) * 100).toFixed(1) : 0}%)`,
+                      name,
+                    ]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
 
-          {/* Lista rápida de Outras OSCs participantes */}
-          {stats.porOutraOsc && stats.porOutraOsc.length > 0 && (
-            <div style={{ marginTop: '16px', borderTop: '1px solid #F1F5F9', paddingTop: '12px' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Instituições Externas Cadastradas ({stats.porOutraOsc.length}):
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px', maxHeight: '120px', overflowY: 'auto' }}>
-                {stats.porOutraOsc.map((item, idx) => (
-                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.80rem', padding: '4px 6px', borderRadius: '4px', backgroundColor: '#F8FAFC' }}>
-                    <span style={{ fontWeight: '600', color: '#334155' }}>{item.nomeOsc}</span>
-                    <strong style={{ color: '#F97316' }}>{item.totalInscritos} inscrito{item.totalInscritos === 1 ? '' : 's'}</strong>
-                  </div>
-                ))}
+              {/* KPI central dentro do furo da Donut */}
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                textAlign: 'center',
+                pointerEvents: 'none',
+              }}>
+                <div style={{ fontSize: '1.55rem', fontWeight: '800', color: '#0C1B33', lineHeight: 1 }}>
+                  {stats.totalInscritos}
+                </div>
+                <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '4px' }}>
+                  Inscritos
+                </div>
               </div>
             </div>
-          )}
+
+            {/* Legenda inline elegante com valores e proporções */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '10px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem' }}>
+                <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#0C1B33', display: 'inline-block' }} />
+                <span style={{ color: '#475569', fontWeight: '600' }}>SOBEI:</span>
+                <strong style={{ color: '#0C1B33' }}>{stats.totalSobei} ({stats.percentualSobei}%)</strong>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem' }}>
+                <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#F97316', display: 'inline-block' }} />
+                <span style={{ color: '#475569', fontWeight: '600' }}>Outras OSCs:</span>
+                <strong style={{ color: '#F97316' }}>{stats.totalOutrasOsc} ({stats.percentualOutrasOsc}%)</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* Tag sutil e compacta das OSCs parceiras unificadas (sem lista pesada) */}
+          <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid #F1F5F9', minHeight: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {outrasOscsUnificadas && outrasOscsUnificadas.length > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: '600' }}>
+                  {outrasOscsUnificadas.length === 1 ? 'Parceira externa:' : 'Parceiras externas:'}
+                </span>
+                {outrasOscsUnificadas.map((item, idx) => (
+                  <span key={idx} style={{
+                    fontSize: '0.74rem',
+                    fontWeight: '700',
+                    color: '#C2410C',
+                    backgroundColor: '#FFF7ED',
+                    border: '1px solid #FFEDD5',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                  }}>
+                    {item.nomeOsc} ({item.totalInscritos})
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <span style={{ fontSize: '0.74rem', color: '#94A3B8' }}>Nenhuma OSC parceira registrada</span>
+            )}
+          </div>
         </div>
 
         {/* Gráfico B: Inscrição em Oficinas vs Sem Oficinas */}
-        <div className="statistics-page__chart-container" style={{ margin: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-md, 16px)' }}>
-            <h3 className="statistics-page__chart-title" style={{ margin: 0 }}>
-              Adesão às Oficinas Pedagógicas
-            </h3>
-            <span style={{ fontSize: '0.74rem', color: 'var(--color-gray-500)', fontWeight: '600' }}>Definidos vs Pendentes</span>
+        <div className="statistics-page__chart-container" style={{ margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-md, 16px)' }}>
+              <h3 className="statistics-page__chart-title" style={{ margin: 0 }}>
+                Adesão às Oficinas Pedagógicas
+              </h3>
+              <span style={{ fontSize: '0.74rem', color: 'var(--color-gray-500)', fontWeight: '600' }}>Definidos vs Pendentes</span>
+            </div>
+
+            <div style={{ position: 'relative', height: '210px', width: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={donutOficinasData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={88}
+                    paddingAngle={0}
+                    stroke="#FFFFFF"
+                    strokeWidth={1.5}
+                    dataKey="value"
+                  >
+                    {donutOficinasData.map((entry, index) => (
+                      <Cell key={`cell-of-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(val, name) => [
+                      `${val} participantes (${stats.totalInscritos > 0 ? ((val / stats.totalInscritos) * 100).toFixed(1) : 0}%)`,
+                      name,
+                    ]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+
+              {/* KPI central dentro do furo da Donut */}
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                textAlign: 'center',
+                pointerEvents: 'none',
+              }}>
+                <div style={{ fontSize: '1.55rem', fontWeight: '800', color: '#10B981', lineHeight: 1 }}>
+                  {stats.percentualComOficina}%
+                </div>
+                <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '4px' }}>
+                  Com Oficina
+                </div>
+              </div>
+            </div>
+
+            {/* Legenda inline elegante com valores e proporções */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '10px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem' }}>
+                <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#10B981', display: 'inline-block' }} />
+                <span style={{ color: '#475569', fontWeight: '600' }}>Com Oficina:</span>
+                <strong style={{ color: '#065F46' }}>{stats.totalComOficina} ({stats.percentualComOficina}%)</strong>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem' }}>
+                <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#F59E0B', display: 'inline-block' }} />
+                <span style={{ color: '#475569', fontWeight: '600' }}>Sem Oficina:</span>
+                <strong style={{ color: stats.totalSemOficina > 0 ? '#B45309' : '#64748B' }}>{stats.totalSemOficina} ({stats.percentualSemOficina}%)</strong>
+              </div>
+            </div>
           </div>
 
-          <div style={{ height: '220px', width: '100%' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={donutOficinasData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={85}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {donutOficinasData.map((entry, index) => (
-                    <Cell key={`cell-of-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(val, name) => [
-                    `${val} participantes (${stats.totalInscritos > 0 ? ((val / stats.totalInscritos) * 100).toFixed(1) : 0}%)`,
-                    name,
-                  ]}
-                />
-                <Legend iconType="circle" />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div style={{ marginTop: '16px', borderTop: '1px solid #F1F5F9', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#ECFDF5' }}>
-              <span style={{ color: '#065F46', fontWeight: '700' }}>✓ Inscritos com Oficina Alocada:</span>
-              <strong style={{ color: '#047857' }}>{stats.totalComOficina} ({stats.percentualComOficina}%)</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', padding: '6px 10px', borderRadius: '6px', backgroundColor: stats.totalSemOficina > 0 ? '#FEF3C7' : '#F8FAFC' }}>
-              <span style={{ color: stats.totalSemOficina > 0 ? '#92400E' : '#64748B', fontWeight: '700' }}>
-                {stats.totalSemOficina > 0 ? '⚠ Pendentes de Escolha de Oficina:' : '✓ Nenhum participante pendente:'}
-              </span>
-              <strong style={{ color: stats.totalSemOficina > 0 ? '#B45309' : '#10B981' }}>
-                {stats.totalSemOficina} ({stats.percentualSemOficina}%)
-              </strong>
-            </div>
+          {/* Tag de status inline e concisa (sem caixas grandes de alerta) */}
+          <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid #F1F5F9', minHeight: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{
+              fontSize: '0.74rem',
+              fontWeight: '700',
+              color: stats.totalSemOficina > 0 ? '#B45309' : '#047857',
+              backgroundColor: stats.totalSemOficina > 0 ? '#FEF3C7' : '#ECFDF5',
+              border: `1px solid ${stats.totalSemOficina > 0 ? '#FDE68A' : '#A7F3D0'}`,
+              padding: '2px 10px',
+              borderRadius: '12px',
+            }}>
+              {stats.totalSemOficina > 0 ? `⚠ ${stats.totalSemOficina} pendentes de escolha` : '✓ 100% das oficinas alocadas'}
+            </span>
           </div>
         </div>
       </div>
@@ -572,17 +686,13 @@ export default function CongressoEstatisticas() {
               Curva de Crescimento das Inscrições
             </h3>
             <span style={{ fontSize: '0.80rem', color: 'var(--color-gray-500)' }}>
-              Evolução temporal acumulada e novas adesões registradas por dia
+              Evolução temporal acumulada das inscrições registradas
             </span>
           </div>
           <div style={{ display: 'flex', gap: '16px', fontSize: '0.78rem', fontWeight: '700' }}>
             <span style={{ color: '#2563EB', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#2563EB', display: 'inline-block' }} />
               Total Acumulado
-            </span>
-            <span style={{ color: '#0D9488', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: '#0D9488', display: 'inline-block' }} />
-              Inscrições no Dia
             </span>
           </div>
         </div>
@@ -596,10 +706,6 @@ export default function CongressoEstatisticas() {
                     <stop offset="5%" stopColor="#2563EB" stopOpacity={0.25} />
                     <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0} />
                   </linearGradient>
-                  <linearGradient id="corNoDia" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0D9488" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#0D9488" stopOpacity={0.02} />
-                  </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
                 <XAxis dataKey="data" tick={{ fontSize: 11, fill: '#64748B' }} />
@@ -611,17 +717,15 @@ export default function CongressoEstatisticas() {
                       return (
                         <div style={{ backgroundColor: '#0C1B33', color: '#FFFFFF', padding: '8px 12px', borderRadius: '8px', fontSize: '0.80rem' }}>
                           <div style={{ fontWeight: '800', marginBottom: '4px' }}>Data: {d.data} ({d.dataCompleta})</div>
-                          <div>Novas Inscrições no Dia: <strong>{d.noDia}</strong></div>
-                          <div>Acumulado até a data: <strong>{d.acumulado}</strong></div>
-                          <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '2px' }}>SOBEI: {d.sobeiNoDia} • Outras: {d.outrasOscNoDia}</div>
+                          <div>Total Acumulado: <strong>{d.acumulado}</strong></div>
+                          <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '2px' }}>+{d.noDia} no dia (SOBEI: {d.sobeiNoDia} • Outras: {d.outrasOscNoDia})</div>
                         </div>
                       );
                     }
                     return null;
                   }}
                 />
-                <Area type="monotone" dataKey="acumulado" stroke="#2563EB" strokeWidth={2.5} fillOpacity={1} fill="url(#corAcumulado)" name="Acumulado" />
-                <Area type="monotone" dataKey="noDia" stroke="#0D9488" strokeWidth={2} fillOpacity={1} fill="url(#corNoDia)" name="No Dia" />
+                <Area type="monotone" dataKey="acumulado" stroke="#2563EB" strokeWidth={2.5} fillOpacity={1} fill="url(#corAcumulado)" name="Total Acumulado" />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
@@ -747,87 +851,47 @@ export default function CongressoEstatisticas() {
             </span>
           </div>
 
-          {/* Filtros e Busca */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative', width: '220px' }}>
-              <input
-                type="text"
-                className="input"
-                placeholder="Buscar oficineiro/tema..."
-                value={buscaOficina}
-                onChange={(e) => setBuscaOficina(e.target.value)}
-                style={{ paddingLeft: '32px', height: '34px', fontSize: '0.82rem' }}
-              />
-              <span style={{ position: 'absolute', left: '10px', top: '9px', color: '#94A3B8' }}>
-                <IconSearch size={14} />
-              </span>
+          {/* Filtros Padronizados da Plataforma */}
+          <div className="statistics-filters" style={{ margin: 0, padding: 0, gap: '12px', alignItems: 'flex-end' }}>
+            <div className="statistics-filters__group" style={{ width: '230px' }}>
+              <span className="statistics-filters__label">Buscar na oficina:</span>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  style={{
+                    height: '38px',
+                    minHeight: '38px',
+                    borderRadius: 'var(--radius-full)',
+                    paddingLeft: '34px',
+                    fontSize: '13px',
+                    border: '1px solid var(--color-gray-300)',
+                    backgroundColor: 'var(--color-white)',
+                  }}
+                  placeholder="Tema ou ministrante..."
+                  value={buscaOficina}
+                  onChange={(e) => setBuscaOficina(e.target.value)}
+                />
+                <span style={{ position: 'absolute', left: '12px', top: '11px', color: 'var(--color-gray-400)' }}>
+                  <IconSearch size={14} />
+                </span>
+              </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '4px', backgroundColor: '#F1F5F9', padding: '3px', borderRadius: '8px' }}>
-              <button
-                type="button"
-                onClick={() => setFiltroStatusOficina('todas')}
-                style={{
-                  border: 'none',
-                  backgroundColor: filtroStatusOficina === 'todas' ? 'var(--color-primary, #1B1464)' : 'transparent',
-                  color: filtroStatusOficina === 'todas' ? '#FFFFFF' : '#475569',
-                  padding: '4px 10px',
-                  borderRadius: '6px',
-                  fontSize: '0.74rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                }}
-              >
-                Todas ({stats.porOficina?.length || 0})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFiltroStatusOficina('esgotadas')}
-                style={{
-                  border: 'none',
-                  backgroundColor: filtroStatusOficina === 'esgotadas' ? '#DC2626' : 'transparent',
-                  color: filtroStatusOficina === 'esgotadas' ? '#FFFFFF' : '#475569',
-                  padding: '4px 10px',
-                  borderRadius: '6px',
-                  fontSize: '0.74rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                }}
-              >
-                Esgotadas ({stats.porOficina?.filter(o => o.status === 'ESGOTADA').length || 0})
-              </button>
-              <button
-                type="button"
-                onClick={() => setFiltroStatusOficina('quase_cheias')}
-                style={{
-                  border: 'none',
-                  backgroundColor: filtroStatusOficina === 'quase_cheias' ? '#D97706' : 'transparent',
-                  color: filtroStatusOficina === 'quase_cheias' ? '#FFFFFF' : '#475569',
-                  padding: '4px 10px',
-                  borderRadius: '6px',
-                  fontSize: '0.74rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                }}
-              >
-                Quase Cheias (≥80%)
-              </button>
-              <button
-                type="button"
-                onClick={() => setFiltroStatusOficina('disponiveis')}
-                style={{
-                  border: 'none',
-                  backgroundColor: filtroStatusOficina === 'disponiveis' ? '#059669' : 'transparent',
-                  color: filtroStatusOficina === 'disponiveis' ? '#FFFFFF' : '#475569',
-                  padding: '4px 10px',
-                  borderRadius: '6px',
-                  fontSize: '0.74rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                }}
-              >
-                Com Vagas
-              </button>
+            <div className="statistics-filters__group" style={{ width: '200px' }}>
+              <span className="statistics-filters__label">Status da sala:</span>
+              <CustomSelect
+                value={filtroStatusOficina}
+                onChange={setFiltroStatusOficina}
+                defaultOption="Todas as oficinas"
+                allowEmpty={false}
+                options={[
+                  { value: 'todas', label: `Todas (${stats.porOficina?.length || 0})` },
+                  { value: 'disponiveis', label: `Com vagas (${stats.porOficina?.filter(o => o.status === 'DISPONIVEL').length || 0})` },
+                  { value: 'quase_cheias', label: `Quase cheias (${stats.porOficina?.filter(o => o.status === 'QUASE_CHEIA').length || 0})` },
+                  { value: 'esgotadas', label: `Esgotadas (${stats.porOficina?.filter(o => o.status === 'ESGOTADA').length || 0})` },
+                ]}
+              />
             </div>
           </div>
         </div>
