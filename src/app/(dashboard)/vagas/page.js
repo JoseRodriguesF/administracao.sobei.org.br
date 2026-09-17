@@ -482,25 +482,7 @@ function VagasContent() {
                       <IconClock size={12} /> {formatDate(vaga.dataCriacao)}
                     </span>
                   </div>
-                  <h3 className="vaga-card__title">
-                    {vaga.titulo}
-                    {vaga.titulo?.includes('(PCD)') && (
-                      <span style={{
-                        marginLeft: '8px',
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        padding: '2px 7px',
-                        borderRadius: '4px',
-                        background: 'rgba(46, 49, 146, 0.1)',
-                        color: 'var(--color-primary, #1b1464)',
-                        border: '1px solid rgba(46, 49, 146, 0.2)',
-                        verticalAlign: 'middle',
-                        display: 'inline-block'
-                      }}>
-                        PCD
-                      </span>
-                    )}
-                  </h3>
+                  <h3 className="vaga-card__title">{vaga.titulo}</h3>
                   <p className="vaga-card__dept">
                     <IconMapPin size={14} /> {vaga.unidade}
                   </p>
@@ -744,21 +726,8 @@ function VagasContent() {
                     color: '#fff',
                     marginBottom: '16px'
                   }}>
-                    <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '4px 0 8px', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '4px 0 8px', color: '#fff' }}>
                       {getFinalTitulo(formData.titulo, formData.isPcd) || 'Título da Vaga'}
-                      {formData.isPcd && (
-                        <span style={{
-                          fontSize: '11px',
-                          fontWeight: '700',
-                          padding: '2px 7px',
-                          borderRadius: '4px',
-                          background: 'rgba(255, 255, 255, 0.2)',
-                          color: '#fff',
-                          border: '1px solid rgba(255, 255, 255, 0.4)'
-                        }}>
-                          PCD
-                        </span>
-                      )}
                     </h2>
                     <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.9)' }}>
                       <span><IconMapPin size={11} /> {formData.unidade || user?.unidade || 'Unidade'}</span>
@@ -778,22 +747,16 @@ function VagasContent() {
                       <h4 style={{ fontSize: '12px', fontWeight: 'bold', borderBottom: '1.5px solid #1b1464', paddingBottom: '4px', marginBottom: '8px', color: '#1b1464' }}>
                         Requisitos e Qualificações
                       </h4>
-                      <ul style={{ paddingLeft: '14px', margin: 0, fontSize: '11px', color: 'var(--color-gray-700)', lineHeight: '1.5' }}>
-                        {(formData.requisitos || '').split('\n').filter(r => r.trim()).length > 0 ? (
-                          (formData.requisitos || '').split('\n').filter(r => r.trim()).map((req, i) => (
-                            <li key={i}>{req}</li>
-                          ))
-                        ) : (
-                          <li style={{ listStyleType: 'none', color: '#999' }}>Requisitos...</li>
-                        )}
-                      </ul>
+                      <p style={{ fontSize: '11px', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: 'var(--color-gray-700)', marginBottom: '12px' }}>
+                        {formData.requisitos || 'Requisitos...'}
+                      </p>
 
                       {formData.beneficios && (
                         <>
                           <h4 style={{ fontSize: '12px', fontWeight: 'bold', borderBottom: '1.5px solid #1b1464', paddingBottom: '4px', marginBottom: '8px', color: '#1b1464', marginTop: '12px' }}>
                             Benefícios
                           </h4>
-                          <p style={{ fontSize: '11px', lineHeight: '1.5', color: 'var(--color-gray-700)' }}>
+                          <p style={{ fontSize: '11px', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: 'var(--color-gray-700)' }}>
                             {formData.beneficios}
                           </p>
                         </>
@@ -826,22 +789,7 @@ function VagasContent() {
         <div className="vagas-modal__overlay" onClick={() => setShowDetailModal(false)}>
           <div className="vagas-modal vagas-modal--detail" onClick={(e) => e.stopPropagation()}>
             <div className="vagas-modal__header">
-              <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                {selectedVaga.titulo}
-                {selectedVaga.titulo?.includes('(PCD)') && (
-                  <span style={{
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    background: 'rgba(46, 49, 146, 0.1)',
-                    color: 'var(--color-primary, #1b1464)',
-                    border: '1px solid rgba(46, 49, 146, 0.2)',
-                  }}>
-                    PCD
-                  </span>
-                )}
-              </h2>
+              <h2>{selectedVaga.titulo}</h2>
               <button className="vagas-modal__close" onClick={() => setShowDetailModal(false)}><IconClose size={18} /></button>
             </div>
 
@@ -902,18 +850,18 @@ function VagasContent() {
 
                 <div className="vagas-detail__section">
                   <h3>Descrição</h3>
-                  <p style={{ whiteSpace: 'pre-wrap' }}>{selectedVaga.descricao}</p>
+                  <p style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{selectedVaga.descricao}</p>
                 </div>
 
                 <div className="vagas-detail__section">
                   <h3>Requisitos</h3>
-                  <p style={{ whiteSpace: 'pre-wrap' }}>{selectedVaga.requisitos}</p>
+                  <p style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{selectedVaga.requisitos}</p>
                 </div>
 
                 {selectedVaga.beneficios && (
                   <div className="vagas-detail__section">
                     <h3>Benefícios</h3>
-                    <p>{selectedVaga.beneficios}</p>
+                    <p style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{selectedVaga.beneficios}</p>
                   </div>
                 )}
 
@@ -1009,7 +957,7 @@ function VagasContent() {
                           {cand.cartaApresentacao && (
                             <div className="candidatura-card__carta">
                               <strong>Carta de apresentação:</strong>
-                              <p>{cand.cartaApresentacao}</p>
+                              <p style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{cand.cartaApresentacao}</p>
                             </div>
                           )}
                         </div>
@@ -1178,7 +1126,7 @@ function VagasContent() {
                         {talento.cartaApresentacao && (
                           <div className="candidatura-card__carta" style={{ borderLeft: '3px solid var(--color-primary, #1B1464)', borderRadius: '4px', padding: '10px 14px' }}>
                             <strong>Carta de apresentação:</strong>
-                            <p>{talento.cartaApresentacao}</p>
+                            <p style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{talento.cartaApresentacao}</p>
                           </div>
                         )}
                       </div>
