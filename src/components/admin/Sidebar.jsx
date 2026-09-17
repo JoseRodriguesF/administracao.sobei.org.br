@@ -85,8 +85,8 @@ export default function Sidebar() {
           </>
         )}
 
-        {/* Vagas: DIRETORA e SUPORTE */}
-        {(user?.nivel?.toUpperCase() === 'DIRETORA' || user?.nivel?.toUpperCase() === 'SUPORTE') && (
+        {/* Vagas: DIRETORA, SUPORTE e DP */}
+        {(user?.nivel?.toUpperCase() === 'DIRETORA' || user?.nivel?.toUpperCase() === 'SUPORTE' || user?.nivel?.toUpperCase() === 'DP') && (
           <>
             <div className="sidebar__divider" />
             <Link
@@ -129,8 +129,8 @@ export default function Sidebar() {
           </>
         )}
 
-        {/* Congresso (Inscritos): CREDENCIADOR, COORDENADORA, COORDENADORA_EVENTO, SUPORTE, DP e DIRETORA */}
-        {(user?.nivel?.toUpperCase() === 'CREDENCIADOR' || user?.nivel?.toUpperCase() === 'COORDENADORA' || user?.nivel?.toUpperCase() === 'COORDENADORA_EVENTO' || user?.nivel?.toUpperCase() === 'SUPORTE' || user?.nivel?.toUpperCase() === 'DP' || user?.nivel?.toUpperCase() === 'DIRETORA') && (
+        {/* Congresso (Inscritos): CREDENCIADOR, COORDENADORA, COORDENADORA_EVENTO, SUPORTE e DIRETORA */}
+        {(user?.nivel?.toUpperCase() === 'CREDENCIADOR' || user?.nivel?.toUpperCase() === 'COORDENADORA' || user?.nivel?.toUpperCase() === 'COORDENADORA_EVENTO' || user?.nivel?.toUpperCase() === 'SUPORTE' || user?.nivel?.toUpperCase() === 'DIRETORA') && (
           <>
             <div className="sidebar__divider" />
             <Link
@@ -151,26 +151,9 @@ export default function Sidebar() {
           </>
         )}
 
-        {/* Chamados e Gerenciamento de Usuários: Apenas SUPORTE */}
+        {/* Gerenciamento de Usuários: Apenas SUPORTE */}
         {user?.nivel?.toUpperCase() === 'SUPORTE' && (
           <>
-            <div className="sidebar__divider" />
-            {/* Chamados */}
-            <Link
-              href="/chamados"
-              className={`sidebar__link ${
-                pathname === '/chamados' ? 'sidebar__link--active' : ''
-              }`}
-            >
-              <Image 
-                src="/images/warning-triangle.svg" 
-                alt="" 
-                width={20} 
-                height={20} 
-                className="sidebar__icon" 
-              />
-              <span className="sidebar__text">Chamados</span>
-            </Link>
 
             <div className="sidebar__divider" />
             {/* Usuários */}
